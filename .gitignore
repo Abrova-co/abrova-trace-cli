@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.tgz
+.env
+.env.local
+.DS_Store
+*.log
+
+# Local editor / AI tool settings
+.claude/
+.vscode/
+.idea/

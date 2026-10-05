@@ -1,0 +1,53 @@
+{
+  "name": "@abrova-trace/cli",
+  "version": "0.1.1",
+  "description": "Command-line tool for Abrova Trace — upload sourcemaps, manage releases, and integrate with CI/CD pipelines.",
+  "keywords": [
+    "abrova",
+    "abrova-trace",
+    "cli",
+    "sourcemaps",
+    "error-tracking",
+    "apm"
+  ],
+  "author": "Abrova <hello@abrova.ir>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abrova-co/abrova-trace-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Abrova-co/abrova-trace-cli/issues"
+  },
+  "homepage": "https://abrova.ir/trace",
+  "bin": {
+    "abrova-trace": "./dist/cli.js"
+  },
+  "main": "./dist/cli.js",
+  "types": "./dist/cli.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup src/cli.ts --format cjs --dts --clean",
+    "dev": "tsup src/cli.ts --format cjs --watch",
+    "prepublishOnly": "npm run build",
+    "start": "node dist/cli.js"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "form-data": "^4.0.1",
+    "picocolors": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.5.0"
+  }
+}

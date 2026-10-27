@@ -118,7 +118,7 @@ function resolveProject(explicit?: string): string {
 /**
  * Walk `dir` recursively, returning the full path of every *.map file.
  * We stay simple: sync recursion, no exclude patterns. Users pointing at
- * bundle dirs like Sareban's `sourcemaps/2.0.6+112-staging/` will typically
+ * bundle dirs like `sourcemaps/2.0.6+112-staging/` will typically
  * have a flat folder anyway.
  */
 function collectMapFiles(dir: string): string[] {

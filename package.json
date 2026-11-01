@@ -1,6 +1,6 @@
 {
   "name": "@abrova-trace/cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Command-line tool for Abrova Trace — upload sourcemaps, manage releases, and integrate with CI/CD pipelines.",
   "keywords": [
     "abrova",

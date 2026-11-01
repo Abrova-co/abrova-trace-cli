@@ -14,6 +14,11 @@ interface UploadOptions {
 
 const DEFAULT_API_URL = 'https://trace.abrova.ir';
 
+/** What the Trace API accepts: one file, one request. A request stays a little under its limit for the form's own bytes. */
+const MAX_FILE_BYTES = 50 * 1024 * 1024;
+const MAX_PART_BYTES = 190 * 1024 * 1024;
+const MAX_PART_FILES = 400;
+
 export async function sourcemapsUpload(opts: UploadOptions): Promise<void> {
   const token = resolveToken(opts.token);
   const projectId = resolveProject(opts.project);
@@ -43,31 +48,44 @@ export async function sourcemapsUpload(opts: UploadOptions): Promise<void> {
     return;
   }
 
-  console.log(pc.dim(`\nuploading...`));
-  const started = Date.now();
-
-  const url = `${apiUrl}/api/projects/${encodeURIComponent(projectId)}/sourcemaps`;
-  const form = new FormData();
-  form.append('release', opts.release);
-  for (const f of files) {
-    form.append('sourcemaps', createReadStream(f), { filename: basename(f) });
+  // Checked before anything is sent, so a release is never left half uploaded for this reason.
+  const tooBig = files.filter((f) => statSync(f).size > MAX_FILE_BYTES);
+  if (tooBig.length > 0) {
+    const names = tooBig.slice(0, 5).map((f) => basename(f)).join(', ');
+    throw new Error(`${tooBig.length} file(s) over the ${humanBytes(MAX_FILE_BYTES)} limit for one file: ${names}`);
   }
 
-  const response = await postFormData(url, form, token);
+  const parts = splitIntoParts(files.map((path) => ({ path, size: statSync(path).size })));
+  const url = `${apiUrl}/api/projects/${encodeURIComponent(projectId)}/sourcemaps`;
+  const started = Date.now();
+  console.log(pc.dim(`\nuploading${parts.length > 1 ? ` in ${parts.length} parts` : ''}...`));
+
+  let count = 0;
+  const errors: any[] = [];
+  for (const [index, part] of parts.entries()) {
+    const form = new FormData();
+    form.append('release', opts.release);
+    for (const file of part) {
+      form.append('sourcemaps', createReadStream(file.path), { filename: basename(file.path) });
+    }
+    const response = await postFormData(url, form, token);
+    if (response.status < 200 || response.status >= 300) {
+      const failed = safeParse(response.body);
+      const errMsg = failed?.error || failed?.message || response.body || 'Unknown error';
+      const done = parts.length > 1 ? ` (${index} of ${parts.length} parts uploaded; run again after fixing this)` : '';
+      throw new Error(`HTTP ${response.status}: ${errMsg}${done}`);
+    }
+    const body = safeParse(response.body) || {};
+    count += body.count ?? part.length;
+    if (Array.isArray(body.errors)) errors.push(...body.errors);
+    if (parts.length > 1) console.log(pc.dim(`  part ${index + 1} of ${parts.length} done`));
+  }
   const elapsed = ((Date.now() - started) / 1000).toFixed(1);
 
-  if (response.status < 200 || response.status >= 300) {
-    const body = safeParse(response.body);
-    const errMsg = body?.error || body?.message || response.body || 'Unknown error';
-    throw new Error(`HTTP ${response.status}: ${errMsg}`);
-  }
-
-  const body = safeParse(response.body) || {};
-  const count = body.count ?? files.length;
   console.log(pc.green(`\n✓ Uploaded ${count} sourcemap${count === 1 ? '' : 's'} in ${elapsed}s`));
-  if (Array.isArray(body.errors) && body.errors.length > 0) {
-    console.log(pc.yellow(`  ${body.errors.length} file(s) had errors:`));
-    for (const err of body.errors.slice(0, 5)) {
+  if (errors.length > 0) {
+    console.log(pc.yellow(`  ${errors.length} file(s) had errors:`));
+    for (const err of errors.slice(0, 5)) {
       console.log(pc.yellow(`    ${err.file}: ${err.error}`));
     }
   }
@@ -142,6 +160,24 @@ function collectMapFiles(dir: string): string[] {
   return out.sort();
 }
 
+/** Files in order, cut into requests the Trace API accepts. */
+export function splitIntoParts<T extends { size: number }>(files: T[], maxBytes = MAX_PART_BYTES, maxFiles = MAX_PART_FILES): T[][] {
+  const parts: T[][] = [];
+  let part: T[] = [];
+  let bytes = 0;
+  for (const file of files) {
+    if (part.length > 0 && (bytes + file.size > maxBytes || part.length >= maxFiles)) {
+      parts.push(part);
+      part = [];
+      bytes = 0;
+    }
+    part.push(file);
+    bytes += file.size;
+  }
+  if (part.length > 0) parts.push(part);
+  return parts;
+}
+
 /**
  * Wrap FormData's stream API in a Promise. Node's fetch can accept a
  * FormData body directly, but the `form-data` package's streaming
@@ -157,7 +193,8 @@ function postFormData(
     form.submit(
       {
         protocol: new URL(url).protocol as 'http:' | 'https:',
-        host: new URL(url).host,
+        host: new URL(url).hostname,
+        port: new URL(url).port,
         path: new URL(url).pathname + new URL(url).search,
         method: 'POST',
         headers: {

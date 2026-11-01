@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 - 2026-11-01
+
+- A folder too big for one upload is sent in parts automatically.
+- A file over 50 MB is reported before anything is uploaded.
+- `--api-url` works with an address that has a port.
+
 ## 0.1.1 - 2026-10-05
 
 First public release.

@@ -98,13 +98,13 @@ function resolveToken(explicit?: string): string {
   if (!token) {
     throw new Error(
       'No token provided. Pass --token ab_pat_xxx or set ABROVA_TRACE_TOKEN. ' +
-      'Create a token at https://console.abrova.ir/dashboard/settings/tokens',
+      'Create a token at https://console.abrova.ir/dashboard/account/tokens',
     );
   }
   if (!token.startsWith('ab_pat_')) {
     throw new Error(
       'Token must be a personal access token starting with "ab_pat_". ' +
-      'Get one at https://console.abrova.ir/dashboard/settings/tokens',
+      'Get one at https://console.abrova.ir/dashboard/account/tokens',
     );
   }
   return token;

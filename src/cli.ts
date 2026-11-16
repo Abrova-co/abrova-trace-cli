@@ -18,7 +18,7 @@ const sourcemaps = program
 
 sourcemaps
   .command('upload <directory>')
-  .description('Upload every .map file in <directory> to a Abrova Trace release')
+  .description('Upload every .map file in <directory> to an Abrova Trace release')
   .option('--project <id>', 'Project ID (copy from the Trace project page). Falls back to ABROVA_TRACE_PROJECT env var')
   .option('--dsn <id>', 'Alias for --project (kept for backward compatibility)')
   .requiredOption('--release <version>', 'Release version this bundle belongs to (e.g. "1.2.3")')

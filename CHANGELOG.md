@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3 - 2026-11-16
+
+- The "no token" messages link the token page directly: https://console.abrova.ir/dashboard/account/tokens.
+
 ## 0.1.2 - 2026-11-01
 
 - A folder too big for one upload is sent in parts automatically.
